@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "name": "",
+  "branch": "",
+  "workspaces_root": "",
+  "delivery_dir": "",
+  "poc_dir": "",
+  "status": "init",
+  "resume_status": null,
+  "created_at": "",
+  "updated_at": "",
+  "coordinator": null,
+  "sources": [],
+  "documents": {
+    "requirement": {
+      "path": "requirement.md",
+      "version": null,
+      "review_status": "not_started",
+      "confirmed_version": null
+    },
+    "design": {
+      "path": "design.md",
+      "version": null,
+      "review_status": "not_started",
+      "confirmed_version": null
+    }
+  },
+  "authorization": {
+    "workspace": null,
+    "development": null,
+    "commit": null,
+    "push": null,
+    "pull_request": null,
+    "merge": null,
+    "deploy": null,
+    "external_messages": null
+  },
+  "repositories": [],
+  "control": {
+    "directory": null,
+    "project": null,
+    "coordctl": null,
+    "baselines": []
+  },
+  "agents": [],
+  "approvals": [],
+  "corrections": [],
+  "pushes": [],
+  "blockers": [],
+  "history": [],
+  "report": null
+}
