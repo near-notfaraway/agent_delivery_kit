@@ -28,13 +28,30 @@
 | 当前没有可用子 Agent，但 mainAgent 能读写授权文件并执行必要命令 | mainAgent 按依赖顺序兼任阶段执行者；已有可用独立会话时也可分配相同输入 |
 | 所需执行能力、权限或验收资源确实缺失 | 只记录受影响范围及解除条件，继续其他可执行工作 |
 
-不因角色未配置或平台不支持而要求用户先设置 Agent、等待角色安装、将阶段标为 blocked 或跳过验收。mainAgent 直接按对应 Skill 执行需求分析、设计、准备、评审和验收；兼任编码时按 `task-execution.md` 逐任务认领/恢复、开发和交接，不建立虚假的 subAgent 会话或新的任务状态。实际执行方式记录在已有调用、执行说明或验证入口，不另建配置检查报告。
+按上述路径直接继续，不将角色未配置记为执行阻塞。mainAgent 兼任编码时按 `task-execution.md` 逐任务认领/恢复；执行方式记录在已有调用、执行说明或验证入口，不伪造子会话或另建配置检查报告。
 
 专业角色调用失败时，先检查调用是否已经启动执行者或产生文件、Git、CLI 等副作用，按恢复约定保留成功部分。证明原执行者未启动或已停止后才能换用通用执行者；已 claimed 的任务沿用原 owner，不重新 claim 或并行启动新 writer。
 
 切换执行者只改变执行方式，确认版本、任务边界、有效授权、验证、产物管理与交接要求保持一致。mainAgent 兼任编码时，随后执行的自检仍是自检；需要独立审查时使用可用独立会话或人工 Reviewer 审阅同一固定差异并记录结果，缺少实际独立审查证据时保留对应待验。
 
 mainAgent 通过宿主实际提供的工具委派；Skill 自身不启动进程或 Agent。记录真实执行方式，不宣称未发生的并行。子 Agent 可以读取和执行本次范围内的其他 Skills，但不因此获得协调权、额外写入权限或继续派生 Agent 的权限；需要进一步委派时返回 mainAgent。
+
+### 可选专业角色的配置
+
+本仓库以 `agents/` 保存可移植 prompt 源文件，以 `skills/` 保存项目 Skill 源文件，不维护 IDE 专属发现目录。不同宿主的自定义 Agent 配置位置和格式按其当前文档确认；这些 Markdown 文件没有统一的自动导入协议，coordctl 不负责安装或启动 Agent。
+
+| 可选角色 | Prompt 源文件 | 使用的 Skill |
+|---|---|---|
+| 需求与技术方案 Agent | [requirement-design-agent.md](../../../agents/requirement-design-agent.md) | `requirement-analysis` / `technical-design` |
+| 交付评审 Agent | [delivery-review-agent.md](../../../agents/delivery-review-agent.md) | `delivery-review` |
+| 集成验收 Agent | [integration-validation-agent.md](../../../agents/integration-validation-agent.md) | `integration-validation` |
+
+仅在用户希望启用增强项且宿主支持时安装或手动配置专业角色；普通流程仍按本节的默认路径执行：
+
+1. 在宿主支持的 Agent 配置中映射源文件的名称、调用描述和“Agent 指令”；核实工具及写入权限，模型沿用宿主默认。配置方式未确认时沿用通用执行者，不把文件复制成功当作已注册。
+2. 每次委派提供本项目绝对 `POC_DIR` 和适用指令入口，保证执行者可以读取项目 Skills 与材料。安装后的 prompt 不依赖安装目录的相对路径，也不假设自动继承主会话历史或 AGENTS。
+3. 更新源 prompt 后同步已安装配置；更新 Skills 后核对安装角色实际读取的项目来源。保留源版本或内容摘要，避免旧安装副本与当前流程矛盾。
+4. 分别确认配置已保存、宿主已发现角色和代表任务的行为。只有实际启动并观察过才能报告行为已验证；未验证阶段如实保留。
 
 ## 2. 提供完整调用输入
 
@@ -43,8 +60,8 @@ mainAgent 通过宿主实际提供的工具委派；Skill 自身不启动进程�
 | 输入 | 必须明确的内容 |
 |---|---|
 | 项目与约束 | `POC_DIR` 绝对路径、本项目 `AGENTS.md`、目标仓库适用指令及要读取的 Skill/执行材料 |
-| 委派范围 | 当前阶段、本次目标与完成标准；涉及执行时给出任务或稳定 correction ID、R / C / V |
-| 材料与基线 | 需求目录、原始来源、文档入口和实际确认版本；评审/验收给出固定修订或未提交冻结摘要 |
+| 委派范围 | 当前阶段、本次目标与完成标准；涉及执行时给出任务或稳定 correction ID，以及对应需求验收、模块和验证用例的名称或已有编号 |
+| 材料与基线 | 已核验的本次需求目录及新建/恢复依据；区分当前需求/方案与参考来源，提供来源索引、实际版本/读取范围、文档入口和本次确认依据；评审/验收给出固定修订或未提交冻结摘要 |
 | 仓库边界 | 只读仓库与唯一可修改 worktree、记录基线和占用情况；编码任务另给持久 owner |
 | 状态入口 | 已存在的 `delivery.json`、`project.json`、`execution.md`、coordctl 及当前 Review/验证位置 |
 | 有效决定与授权 | 实际确认、批准、例外及其范围/依据；已有批准不重新请求，也不扩大到新差异 |
@@ -62,14 +79,14 @@ mainAgent 通过宿主实际提供的工具委派；Skill 自身不启动进程�
 
 | 对象或动作 | 责任 |
 |---|---|
-| `delivery.json`、整体阶段、确认同步、当前交付指针 | mainAgent 唯一维护，按现有锁和原子替换约定写入 |
-| 原需求/设计、对接材料、Review/验证入口 | 本次明确分配的唯一 writer；子 Agent 返回结果，mainAgent 再同步自己负责的材料 |
+| `delivery.json`、整体阶段、确认同步、当前交付指针 | mainAgent 唯一维护，写入方式按 delivery-flow 第 3 节 |
+| 原需求/设计、来源、对接材料、Review/验证入口 | 本次明确分配的唯一 writer；跨材料同步由 mainAgent 安排各 writer，不并发代写受委派材料 |
 | 业务 worktree、实现和获授权的提交 | 当前唯一编码 writer，范围不超过委派与实际授权 |
 | `context` / `summary` | 可按职责只读；读取历史 context 后仍核对当前交付修订和有效批准 |
 | `claim` / `complete` | 默认由编码 writer 以分配/恢复的持久 owner 执行；mainAgent 核验结果并负责后续调度 |
 | `decide` | 由 mainAgent 或获分配的编码执行者调用，重试前核查稳定决策 ID；审批和文档同步由 mainAgent 处理 |
 | `skip` | 由 mainAgent 核验条件与下游影响后执行 |
-| 整体验收通过后的逐仓 push | mainAgent 按 delivery-flow 恢复条件式授权、固定修订和真实远端，普通推送并核验/记录；阶段 subAgent 不自行提前推送 |
+| 整体验收通过后的逐仓 push | mainAgent 按 delivery-flow 第 9 节核验授权与固定修订、普通推送并记录；阶段 subAgent 不自行推送 |
 
 评审和验收 subAgent 不执行任务状态变更或业务提交，只写分配的证据与隔离验证资源。编码者可使用 `delivery-review` 做自检，但不能把自己的自检称为独立审查；mainAgent 按评审 Skill 核验并安排所需复核。
 
@@ -94,4 +111,4 @@ mainAgent 通过宿主实际提供的工具委派；Skill 自身不启动进程�
 
 mainAgent 核验返回材料、实际状态和产物管理规定的交接检查后再推进：文档就绪不等于已确认，评审就绪不等于用户批准，编码 Agent 返回不等于任务已 `complete`，局部验收通过不等于整体完成。材料缺陷交回对应 writer，缺少必需证据或存在占用冲突只阻塞受影响范围。收到反馈时续接或重新委派同一范围，保留有效授权与已完成副作用。
 
-单任务材料就绪就处理该任务的 Review、授权和交接，独立工作继续。`complete` 成功后 mainAgent 立即检查 `summary` 并调度 ready 任务；子 Agent 不接管整体调度。
+调度、单任务授权与 `complete` 后的依赖解锁按 delivery-flow 第 7 节处理；子 Agent 不接管整体调度。

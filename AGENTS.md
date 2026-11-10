@@ -19,26 +19,36 @@
 | `agents/` | 可选专业角色的职责、调用条件、输入输出与权限边界；引用 Skills，不复述执行流程 |
 | CLI / 代码 | 可程序化执行的检查与持久化保证 |
 
-使用通用 mainAgent 承担协调职责，按 [delivery-flow](skills/delivery-flow/SKILL.md) 工作。仓库准备由 mainAgent 直接执行 [repository-preparation](skills/repository-preparation/SKILL.md)，编码默认委派给通用 subAgent。所有自定义 Agent 均为可选增强项；未配置、平台不支持或角色不可用时，按委派约定使用通用执行者继续，无需先安装或配置角色。没有子 Agent 能力时由 mainAgent 按依赖串行执行，仍保留任务认领、评审、授权与证据门禁。
+本文中的 mainAgent 是协调职责，subAgent 是受委派执行者，不是要求安装的角色名称。协调者按 [delivery-flow](skills/delivery-flow/SKILL.md) 工作，直接执行仓库准备，默认将编码委派给通用 subAgent。自定义角色均为可选增强项；不可用时使用通用执行者，没有子 Agent 能力时由 mainAgent 按依赖串行执行，同样保留认领、评审、授权与证据门禁。
 
-实际读取 Skill 指令。Skills 是指令文件，不是可调用的 CLI API；保存 prompt 文件不会注册或启动 Agent。委派、资源定位与写入边界遵循 [Agent 委派约定](skills/delivery-flow/references/agent-delegation.md)，编码遵循 [单仓任务执行](skills/delivery-flow/references/task-execution.md)。不得假设其他会话自动继承本文件或聊天历史。
+实际读取 Skill 指令；保存 prompt 不会注册或启动 Agent，不得假设其他会话自动继承本文件或聊天历史。完整调用输入、资源定位和写入边界见 [Agent 委派约定](skills/delivery-flow/references/agent-delegation.md)。
 
 本项目自带及后续新增的项目 Skills 均以真实目录和文件维护在 `./skills/` 下，该目录是唯一源目录和读取入口。不得在仓库内为其创建 IDE 专属发现目录或符号链接。可移植的专业角色 prompt 保存在 `./agents/`，宿主安装单独处理；外部与用户级 Skills 遵循各自环境的约定。
 
-文档结构与确认记录由 [requirement-analysis](skills/requirement-analysis/SKILL.md) 和 [technical-design](skills/technical-design/SKILL.md) 定义，使用各自模板。单任务评审由 [delivery-review](skills/delivery-review/SKILL.md) 定义，跨仓库验收由 [integration-validation](skills/integration-validation/SKILL.md) 定义。共用的 [验证与证据](skills/delivery-flow/references/validation-and-evidence.md) 和 [恢复与返工](skills/delivery-flow/references/recovery-and-corrections.md) 规则通过引用使用，不复制到角色 prompt 中。
+按工作范围读取所属入口，规则变更修改其归属文件，其他层通过引用使用：
 
-产物遵循 [交付产物与临时资源管理](skills/delivery-flow/references/artifact-management.md)：创建前分类并优先复用当前入口，历史证据与可重建运行资源分开保存。临时资源必须有归属、生命周期及实际处理结果；交接核验材料完整性并说明遗留，不破坏活跃工作、正式支撑资源或必要证据。旧需求不因新目录约定自动迁移或清理。
+| 工作范围 | 指令入口 |
+|---|---|
+| 需求与方案文档、确认记录 | [requirement-analysis](skills/requirement-analysis/SKILL.md)、[technical-design](skills/technical-design/SKILL.md) 及各自模板 |
+| 基线与 worktree | [repository-preparation](skills/repository-preparation/SKILL.md) |
+| 单仓编码、提交与交接 | [单仓任务执行](skills/delivery-flow/references/task-execution.md) |
+| 单任务评审、跨仓库验收 | [delivery-review](skills/delivery-review/SKILL.md)、[integration-validation](skills/integration-validation/SKILL.md) |
+| 验证和检查例外 | [验证与证据](skills/delivery-flow/references/validation-and-evidence.md) |
+| 当前交付修订、中断和修复 | [恢复与返工](skills/delivery-flow/references/recovery-and-corrections.md) |
+| 输入存档、产物与资源生命周期 | [来源材料管理](skills/delivery-flow/references/source-materials.md)、[产物管理](skills/delivery-flow/references/artifact-management.md) |
 
 ## 交付门禁
 
 - 需求材料与状态默认保存在 `<POC_DIR>/workspaces/<requirement-name>/`，无需单独确认保存位置。恢复已有需求时沿用其记录位置。
+- 先核验交付身份、版本与批准范围。参考文档、同名历史材料和旧确认不自动成为当前基线；没有当前交付材料及有效记录时，从需求整理与确认开始。显式续接或采用旧基线不得继承无关任务状态或授权。
+- 影响需求、方案或验收的输入必须可追溯。来源存档不代表需求或方案获批；必要原文及其版本按来源材料管理保留。
 - 需求确认后才能开展技术设计，方案确认后才能准备仓库；所有授权修改仓库的 worktree 均验证就绪后，才能生成执行控制材料或启动编码 Agent。
 - 保持 `requirement.md` 和 `design.md` 作为人工评审入口。任务映射与执行指令放在独立 `control/` 目录中。依据实际确认方案生成版本 1 任务图，不复制 README 的示例任务图。
 - 按实际版本和范围记录真实确认。文档生成、单项答复和任务完成均不代表整份文档获批。沿用已有有效授权，不重复询问；仅分析或设计不自动授权实现、提交或发布。
-- 协调者独占维护 `delivery.json`，同步真实文档确认。阶段执行者返回结果，只写入分配的材料；任务状态通过 coordctl 修改。
-- 基线变化时，保持已批准原文档、当前控制快照与版本基线一致。保留已有版本、确认和状态，模板变化不要求迁移；缺少 `execution.md` 的旧控制目录仍可使用。
-- 开源流程保持独立，不绑定外部 Skill 名称或厂商专属 Agent 能力。遵循 [README 运行要求](README.md#运行要求与可选能力)，替代工具或人工流程必须满足同一验收与证据标准。能力缺失只阻塞受影响检查，不减免验收。
-- 整体验收通过后，mainAgent 按 delivery-flow 将所有交付仓库的最新已验收提交普通推送到对应远端需求分支，核验逐仓远端 SHA 后收尾。沿用明确的条件式推送授权，不重复确认；新提交未验收、目标不明或推送失败时保留受影响阻塞及已成功结果。推送不自动授权 PR、合并或部署。
+- 协调者独占维护 `delivery.json`，同步真实文档确认和当前交付修订；阶段执行者只写分配的材料，任务状态通过 coordctl 修改。
+- 基线变化时同步已批准原文档、当前控制快照与版本基线，保留历史版本、确认和状态。模板更新不要求迁移；缺少 `execution.md` 的旧控制目录仍可使用。
+- 开源流程不绑定外部 Skill 名称或厂商专属 Agent 能力。替代工具或人工路径满足同一验收与证据标准；能力缺失只阻塞受影响检查，不减免验收。
+- 整体验收通过且有对应范围的明确推送授权后，mainAgent 普通推送最新已验收提交到逐仓远端需求分支，核验远端 SHA。沿用条件式授权，不重复确认；授权缺失、修订未验收、目标不明或推送失败时保留受影响范围及成功结果。推送不自动授权 PR、合并或部署。
 
 评审、授权与证据质量门禁由 Agent 指令约束，当前 CLI 不强制执行这些检查。遵守适用仓库与宿主环境的指令。
 
@@ -62,8 +72,7 @@
 - 当前 `project.json` 格式视为版本 1。
 - 涉及持久化状态读写的变更，必须向后兼容版本 1；否则需提供明确的迁移命令、迁移测试与回退说明。
 - 迁移时保留未知字段，不得因旧二进制无法识别新字段而破坏状态。
-- 开发或测试时不得修改活跃需求的 `project.json` 或 `decisions.jsonl`。
-- 测试使用临时目录和虚构控制文件。
+- 开发或测试使用临时目录和虚构控制文件，不得将活跃需求的 `project.json` 或 `decisions.jsonl` 作为夹具修改。
 - 迁移不得要求用户手工编辑活跃控制文件。
 
 ## 隔离与隐私
@@ -102,21 +111,25 @@
 - 仓库具备 Git 时，使用隔离分支或 worktree 开发。不得覆盖活跃验证使用的二进制或源码工作树。
 - 默认使用各仓库的 `master` 作为基线。master 缺失或不适用，或用户指定的替代来源无法解析时，暂停该仓库，直到用户提供有效来源；不得静默改用 `HEAD`、功能分支、`main` 或发布分支。创建前记录确切 ref、不可变 commit 与适用授权；准备和复用遵循 repository-preparation Skill。
 - 仓库准备部分成功或重试时，保留已成功 worktree 和已有实现。不得为纠正基线重置或丢弃工作。每个 worktree 和共用材料最多只有一个写入者。
-- 按单任务推进实现、评审、提交批准与交接。任务就绪后立即展示具体 diff 与证据；等待评审或提交授权时保持 `claimed`，独立工作继续。授权仅适用于其实际范围。
-- 有任务可 Review 且需要用户反馈时，mainAgent 按 delivery-flow 展示材料后释放本轮交互，不等待整批任务或持续阻塞在等待调用中；保留交付状态和续接信息，收到授权或完成通知后核对并继续推进。
-- 已获授权的不可变提交满足验收后，记录最终评审与验证，执行 `complete`，随后立即检查 `summary` 并调度可开始任务。仅有 commit 不解锁依赖；仍有可推进工作时，整体交付保持 `developing`。
-- 需求内修复默认复用原需求分支/worktree，先核对基线、改动、旧写入者已停止及活跃验证占用。保留原任务 `result`，不重新认领或完成；任务边界未变时，无需维护任务图。
-- 协调者维护当前已评审、获授权的 `delivery.json.repositories[].delivery_commit`。可选字段缺失时，通过相关任务结果和已核实修复证据兼容恢复。下游在 `context` 后必须读取当前修订与有效批准，不从浮动 HEAD 推断交付版本。
-- 重试失败操作前，核对实际 Git、CLI、交付记录与证据状态。保留成功副作用，去重批准和修复记录，保留未知字段，只补齐未完成步骤。已认领任务仅在旧写入者停止后，才能以记录中的 owner 续接；重复 `claim` 不是恢复机制。
 - 行为变化遵循测试驱动开发：先添加一个失败行为测试并确认失败，再做最小实现并运行完整测试。
 - 核心使用 Go 标准库；只有某项依赖的实际收益无法合理地通过标准库实现时，才引入该依赖。
-- 所有状态修改保留文件系统锁与原子写入。
 - 所有权、状态转换、决策或持久化变更必须补充并发测试。
 - 在本环境执行 Go 命令时，使用 `GOCACHE=/private/tmp/agent-coordinator-go-cache`。
 
-交接前的最低验证要求：
+## 评审、完成与恢复
 
-运行检查前，核查包初始化、`TestMain`、脚本、工具链、依赖与外部目标的副作用，使用已授权的隔离资源。`go test -run '^$'` 仍会执行初始化；仅编译和兼容检查不得记录为已运行测试。必需检查失败或无法安全运行时，保留失败/未运行状态，记录基线对照、影响、替代证据、真实且限定范围的例外批准与后续补验条件。
+- 单任务就绪后立即展示具体 diff 与证据；等待 Review 或提交授权时保持 `claimed` 和原 owner，独立工作继续。mainAgent 保存状态及续接信息后释放本轮交互，不等待整批任务。
+- 已获授权的不可变提交满足验收、最终评审及验证后执行 `complete`；协调者立即检查 `summary` 并调度可开始任务。仅有 commit 不解锁依赖；仍有执行者或可推进任务时保持 `developing`，局部阻塞不冒充整体阻塞。
+- 需求内修复默认复用原 worktree，核对基线、改动、旧 writer 已停止及验证占用；保留原任务 `result`，不重新认领或完成。任务边界未变时无需维护任务图。
+- 下游在 `context` 后读取 `delivery.json.repositories[].delivery_commit` 及有效批准。字段缺失时从任务结果和已核实修复证据恢复，不从浮动 HEAD 推断交付版本。
+- 重试前核对 Git、CLI、交付记录与证据，保留成功副作用及未知字段，去重批准和修复，只补未完成步骤。已认领任务在旧 writer 停止后以原 owner 续接，重复 `claim` 不是恢复机制。
+- 产物创建前确认用途和 writer，临时资源记录归属、生命周期及实际处理结果。交接核验材料完整性和遗留；不破坏活跃工作、正式支撑资源或必要证据，不因目录约定变化清理旧需求。
+
+## 验证要求
+
+运行检查前核查包初始化、`TestMain`、脚本、工具链、依赖和外部目标的副作用，使用已授权的隔离资源。`go test -run '^$'` 仍会执行初始化；只编译和兼容检查不得记录为已运行测试。
+
+本仓库交接前至少执行：
 
 ```bash
 GOCACHE=/private/tmp/agent-coordinator-go-cache go test ./... -count=1
@@ -125,11 +138,11 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go vet ./...
 
 持久化状态行为变化时，还需使用虚构的版本 1 控制文件验证新旧工作流，并通过独立 CLI 进程验证状态恢复与并发认领。
 
-评审与验证必须关联最终源码、diff、相关依赖、工具链与配置。变更后复核受影响范围；仅提交信息或路径变化时，也必须证明等价后才能复用证据。交接除 Git commit 外，还需提供下游可消费的固定依赖版本或产物及获取/解析证据。
+评审与验证必须关联最终源码、diff、相关依赖、工具链与配置。变更后复核受影响范围；仅提交信息或路径变化也须证明等价后才能复用证据。交接除 Git commit 外，还需下游可消费的固定依赖版本或产物及获取/解析证据。
 
 跨仓库验收必须经过真实 handler、默认编码器与消费者，覆盖相关正常、空值/null 和错误响应。数据库与并发承诺使用隔离真实存储验证；要求浏览器验收时提供对应证据。说明 Mock 边界与目标环境差异，工具成功、编译和本地测试不能替代必需验收。
 
-每任务保留一个当前评审/验证入口，链接必要尝试、关键失败与最终证据。仅清理本次验证创建且归属明确的资源，保留必要证据与活跃工作。详细字段、检查和恢复步骤以以上 Skills 及共用引用材料为准。
+必需检查失败或无法安全运行时保留失败/未运行状态，记录基线对照、影响、替代证据、真实且限定范围的例外批准与补验条件。每任务保留一个当前评审/验证入口，关联关键失败和最终证据；具体字段、复核及资源处理按共用约定执行。
 
 ## 交接要求
 

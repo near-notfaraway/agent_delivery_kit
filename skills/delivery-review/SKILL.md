@@ -5,7 +5,7 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 # 交付评审
 
-对一个任务或一项修复形成可供用户审阅的具体结果：实际改动、方案一致性、问题复核、验证与限制。协调者负责授权、提交、`complete` 和后续调度；本 Skill 不代替这些动作。
+对一个任务或一项修复形成可供用户审阅的具体结果：实际改动、方案一致性、问题复核、验证与限制。协调者核验授权和结果，编码 writer 执行获授权的提交与 `complete`；本 Skill 仅负责评审。
 
 可由 mainAgent 或通用/专业评审 subAgent 执行，输入输出、冻结范围与 writer 遵循 [委派约定](../delivery-flow/references/agent-delegation.md)。受委派时反馈、提交授权和例外请求交回 mainAgent。角色名称不证明独立性，编码者使用本 Skill 自检须如实标注。
 
@@ -15,7 +15,7 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 获取基线、HEAD、工作树状态、staged/unstaged diff 及有关未跟踪文件。未提交实现以实际差异审阅；已提交实现以不可变 commit 和父提交审阅，不借用旧 HEAD 表示新代码。
 
-确认唯一仓库、任务或修复 ID、R / C / V、审阅基线与预期交接。任务 `claimed` 时核对 owner；完成后的修复不重新 claim 或改写原 `result`。Reviewer 只读业务仓库，修复交回当前写入者。
+确认唯一仓库、任务或修复 ID、对应需求/模块/验证用例（名称或已有编号）、审阅基线与预期交接。任务 `claimed` 时核对 owner；完成后的修复不重新 claim 或改写原 `result`。Reviewer 只读业务仓库，修复交回当前写入者。
 
 读取 [产物管理](../delivery-flow/references/artifact-management.md)，核对 mainAgent 分配的当前入口、attempt、证据及 runtime。默认复用固定输入和已有检查工具，不为每轮评审创建一套整仓副本、freeze 脚本和“最终”报告。
 
@@ -36,14 +36,9 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 ## 3. 验证、冻结和例外
 
-执行或核验 [验证与证据约定](../delivery-flow/references/validation-and-evidence.md)：
+按 [验证与证据约定](../delivery-flow/references/validation-and-evidence.md) 核验执行前检查、最终冻结内容、真实结果及检查例外。Reviewer 可以复核已有证据或在分配的隔离资源中补验；不因被委派评审自动获得业务 worktree 写入权。变更后复核受影响范围，证据复用须有等价依据。
 
-1. 先核查初始化/测试副作用、工具链、依赖和隔离目标，再执行仓库要求及任务验收。
-2. 记录命令、工作目录、工具链、源码/差异摘要、相关依赖与配置摘要、退出码、结果及必要输出。配置摘要不包含凭证。
-3. 失败、未运行、只编译、兼容构建与实际测试分别记录。检查例外需要基线对照、影响、替代证据、真实批准及补验条件，不修改失败结果。
-4. 冻结供用户审阅的源文件和差异。语义、依赖或配置变化后复核和重验受影响范围；纯提交或路径变化可在证明等价后复用证据。
-
-下游交接同时提供完整 Git commit、可消费的固定模块版本或产物、获取/解析验证和兼容说明。提交只存在本地时明确获取限制；未授权发布可使用从确切提交生成的固定本地产物，不能将浮动 `replace` 或活跃源码路径作为最终版本。
+最终交接满足共用约定的固定修订、依赖/产物、获取解析证据和兼容要求。未提交阶段使用冻结摘要审阅，最终 commit 形成后再核验内容及可消费输入，不要求为评审提前提交或发布。
 
 ## 4. 形成单任务评审入口
 
@@ -51,7 +46,7 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 评审材料写清问题、外部可见变化、设计符合度、最终差异、验证、兼容、当前限制与下游获取方式。缺少完整不可变修订时注明尚未提交，提供冻结摘要；提交后核验 commit blob 与批准的内容一致再关联证据。
 
-评审结论包括产物管理的交接核查：当前入口唯一、历史效力明确、必要证据和链接可读取、最终修订绑定正确，以及新增材料用途和临时资源实际停止/删除/保留。材料问题交回其 writer；缺少必需证据或存在占用冲突时暂停受影响交接，明确有理由的资源保留不等于验收失败。不另建目录清洁报告。
+形成结论前完成产物管理的交接核查，结果写入当前入口。材料缺陷交回对应 writer，缺少必需证据或存在占用冲突时保持受影响交接待补。
 
 只要本任务具备可审阅结果，立即交给协调者，不等其他独立任务。对用户需要批准的动作，先完成可独立完成的审查、修复和验证，再由协调者请求最终批准。已有授权覆盖该范围时沿用；方案确认、流程调整或另一任务的批准不是本任务提交授权。
 
