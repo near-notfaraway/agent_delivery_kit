@@ -153,7 +153,7 @@ mainAgent 直接执行 [repository-preparation](../repository-preparation/SKILL.
 1. 将已确认需求和方案复制为完整快照，并在 `baselines/` 保存不可覆盖基线，记录版本、确认依据及内容摘要。复制去重按产物管理，当前快照与评审入口保持一致；快照内相对引用的原解析位置按来源材料管理记录，不能因复制而假设链接仍可导航。
 2. 根据确认方案生成 `execution.md`，写清绝对路径、确认版本、需求验收/模块/验证用例与任务的对应关系、依赖原因、仓库边界、验证命令和交接要求。使用实际名称或已有编号，不要求人工评审稿先提供编号映射表。
 3. 从 `templates/project.template.json` 生成 `project.json`，保留 `version: 1`。根据实际方案生成任务，不复制 README 的示例任务图。
-4. 每项任务填写唯一 `id`、唯一授权 worktree 的绝对路径 `repo`、`title`、`objective`、`acceptance`、`handoff_requirements`、`depends_on` 和初始 `status: pending`。不添加整体阶段、审批或 Agent 调度字段。
+4. 每项任务填写唯一 `id`、唯一授权 worktree 的绝对路径 `repo`、`title`、`objective`、`acceptance`、`handoff_requirements`、`depends_on` 和初始 `status: pending`。一个仓库只有一个任务时，`id` 直接使用仓库别名，`title` 以仓库名开头；同一仓库确有多个任务时，使用 `<仓库别名>-<范围>`，并在标题中保留仓库名。不要只用 `contract`、`core`、`forwarding` 等抽象能力名隐藏任务对应的仓库。不添加整体阶段、审批或 Agent 调度字段。
 5. 检查任务 ID 唯一、引用存在、无自依赖或环、仓库授权正确，且方案范围被完整覆盖。同一 worktree 的多个写任务用依赖或协调调度串行化。
 6. 验收须包括符合设计、必要代码 Review、仓库要求的检查与相关测试；交接须包括接口/数据契约、不可变修订、可消费的固定依赖/产物及解析验证、兼容及下游使用方式，按 [验证与证据约定](references/validation-and-evidence.md)。
 7. 在 `POC_DIR` 为本需求构建独立 CLI，不覆盖活跃二进制：
@@ -185,7 +185,7 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CONTROL_DIR/bin/co
 每个任务在 `complete` 前按以下步骤推进：
 
 1. mainAgent 执行或委派 [delivery-review](../delivery-review/SKILL.md)，提供任务、实际 diff、确认版本、有效决策和验证材料。编码者按反馈修复，Reviewer 复核并返回该 Skill 规定的单任务证据；核查自检与独立审查的真实边界，并按产物管理核验当前入口、历史、可读取证据和资源处理。
-2. 材料就绪就向用户交付本任务的具体差异、Review、验证及限制，缺少覆盖范围的授权时请求 Review/提交确认，不等待独立任务。沿用已明确覆盖的授权，流程安排、方案确认或另一任务批准不能替代本任务授权。
+2. 材料就绪就按 [delivery-review](../delivery-review/SKILL.md) 第 4 节的用户阅读顺序交审：先展示本任务的改动、解决的问题和主要代码，再简述验证及影响评审决定的限制，附本次范围的 Review diff 与评审入口；不要只发送路径、哈希或通过请求。缺少覆盖范围的授权时请求 Review/提交确认，不等待独立任务。沿用已明确覆盖的授权，流程安排、方案确认或另一任务批准不能替代本任务授权。
 3. 将真实批准按稳定 ID、实际范围、冻结摘要及依据记录到 Review 和 `delivery.json`。检查失败默认阻塞该项验收，仅有真实批准的具体验收例外时按范围交接，原失败及补验条件保留。
 4. mainAgent 确认验收和有效授权满足后，当前 writer 按单仓任务执行约定创建新增提交、核验冻结内容并执行 `complete`，返回真实修订和 CLI 结果。
 5. mainAgent 核对实际 Git/CLI 与最终 Review、验证及可消费 handoff 一致，核对新增材料及遗留资源，再更新当前 `delivery_commit` 和证据入口。中途失败按恢复约定补齐缺失步骤，不重放已成功动作；实际 complete 已成功时不因补证据问题重复 complete。
