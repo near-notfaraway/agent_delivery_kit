@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="420" viewBox="0 0 1120 420" role="img" aria-labelledby="title description">
+  <title id="title">API 与 SDK 的任务依赖和交接示例</title>
+  <desc id="description">虚构任务 sdk 依赖 api。api-agent 实现、验证、评审并获授权提交后，执行 complete，将 commit、validation 和 handoff 保存到 project.json 的 result。summary 随后将 sdk 列为 ready，sdk 执行者通过 context 读取交接证据，成功 claim 后适配 Item 类型。ready 是计算结果，不是持久化任务状态。</desc>
+  <rect width="1120" height="420" rx="10" fill="#f8fafc"/>
+  <g font-family="system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif">
+    <text x="32" y="49" font-size="30" font-weight="650" fill="#0f172a">API → SDK：依赖如何解锁</text>
+    <text x="32" y="83" font-size="18" fill="#475569">虚构的 Item v1 契约示例 · sdk 依赖 api 的固定交付版本</text>
+    <g fill="#ffffff" stroke="#cbd5e1" stroke-width="1.2">
+      <rect x="32" y="132" width="272" height="220" rx="8"/>
+      <rect x="756" y="132" width="332" height="220" rx="8"/>
+    </g>
+    <rect x="368" y="132" width="324" height="220" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <g fill="none" stroke="#64748b" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 306 247 H 366"/>
+      <path d="M 360 243 L 366 247 L 360 251"/>
+      <path d="M 694 247 H 754"/>
+      <path d="M 748 243 L 754 247 L 748 251"/>
+    </g>
+    <g font-size="16" fill="#475569" text-anchor="middle">
+      <text x="336" y="228">写入</text>
+      <text x="724" y="228">读取</text>
+    </g>
+    <g font-size="22" font-weight="650" fill="#0f172a">
+      <text x="56" y="177">api / 上游任务</text>
+      <text x="392" y="177">result / 完成交接记录</text>
+      <text x="780" y="177">sdk / 下游任务</text>
+    </g>
+    <g font-size="18" fill="#475569">
+      <text x="56" y="220">实现、验证、Review</text>
+      <text x="56" y="253">获授权后提交固定修订</text>
+      <text x="56" y="286">api-agent 执行 complete</text>
+      <text x="512" y="220">固定修订</text>
+      <text x="512" y="253">实际验证结果</text>
+      <text x="512" y="286">契约与获取证据</text>
+      <text x="392" y="328">保存在 project.json</text>
+      <text x="780" y="220">summary：进入 ready 列表</text>
+      <text x="780" y="253">context：读取 api 交接证据</text>
+      <text x="780" y="286">claim：认领后适配 Item 类型</text>
+    </g>
+    <g font-family="ui-monospace, 'SFMono-Regular', Consolas, monospace" font-size="18" fill="#334155">
+      <text x="392" y="220">commit</text>
+      <text x="392" y="253">validation</text>
+      <text x="392" y="286">handoff</text>
+      <text x="56" y="328">claimed → completed</text>
+      <text x="780" y="328">pending → claimed</text>
+    </g>
+    <path d="M 32 375 H 1088" stroke="#cbd5e1"/>
+    <text x="32" y="403" font-size="18" fill="#334155">依赖 api 完成前，sdk 的 claim 会被拒绝；Git commit 本身不会解锁依赖。</text>
+  </g>
+</svg>
