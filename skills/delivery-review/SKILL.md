@@ -1,11 +1,11 @@
 ---
 name: delivery-review
-description: Review task diffs against confirmed designs and bind validation to the reviewed revision before submission. Use for task handoffs and corrections. Not for implementation or publishing.
+description: Review milestone, task, or correction diffs against confirmed designs and bind validation to the reviewed revision. Use for milestone reviews and task handoffs. Not for implementation or publishing.
 ---
 
 # 交付评审
 
-对一个任务或一项修复形成可供用户审阅的具体结果：实际改动、方案一致性、问题复核、验证与限制。协调者核验授权和结果，编码 writer 执行获授权的提交与 `complete`；本 Skill 仅负责评审。
+对一个里程碑、完整任务或一项修复形成可供用户审阅的具体结果：实际改动、方案一致性、问题复核、验证与限制。协调者核验授权和结果，编码 writer 执行获授权的提交与 `complete`；本 Skill 仅负责评审。
 
 可由 mainAgent 或通用/专业评审 subAgent 执行，输入输出、冻结范围与 writer 遵循 [委派约定](../delivery-flow/references/agent-delegation.md)。受委派时反馈、提交授权和例外请求交回 mainAgent。角色名称不证明独立性，编码者使用本 Skill 自检须如实标注。
 
@@ -16,6 +16,8 @@ description: Review task diffs against confirmed designs and bind validation to 
 获取基线、HEAD、工作树状态、staged/unstaged diff 及有关未跟踪文件。未提交实现以实际差异审阅；已提交实现以不可变 commit 和父提交审阅，不借用旧 HEAD 表示新代码。
 
 确认唯一仓库、任务或修复 ID、对应需求/模块/验证用例（名称或已有编号）、审阅基线与预期交接。任务 `claimed` 时核对 owner；完成后的修复不重新 claim 或改写原 `result`。Reviewer 只读业务仓库，修复交回当前写入者。
+
+里程碑评审读取已有执行入口中的本轮目标、验收边界、前序通过依据和最终检查时点。首轮以任务基线为准，后续以上一已通过里程碑的固定修订或冻结内容为增量基准，同时核对任务累计 diff 及其对已通过内容的影响；未提交时不以未变化的 HEAD 冒充里程碑基准。
 
 读取 [产物管理](../delivery-flow/references/artifact-management.md)，核对 mainAgent 分配的当前入口、attempt、证据及 runtime。默认复用固定输入和已有检查工具，不为每轮评审创建一套整仓副本、freeze 脚本和“最终”报告。
 
@@ -41,11 +43,15 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 按 [验证与证据约定](../delivery-flow/references/validation-and-evidence.md) 核验执行前检查、最终冻结内容、真实结果及检查例外。Reviewer 可以复核已有证据或在分配的隔离资源中补验；不因被委派评审自动获得业务 worktree 写入权。变更后复核受影响范围，证据复用须有等价依据。
 
-最终交接满足共用约定的固定修订、依赖/产物、获取解析证据和兼容要求。未提交阶段使用冻结摘要审阅，最终 commit 形成后再核验内容及可消费输入，不要求为评审提前提交或发布。
+Reviewer 对当前最终差异、关联链路、必要检查及交接材料集中完成复核。已有冻结证据与本次输入等价时直接引用，不另建相同版本的冻结、报告或重复终验；补验按影响范围选择。新变化、实质疑点、证据缺口及提交后的源码对应关系仍须核验，不能以“一次交接”省略独立审查或把自检当作 Review。
+
+中间里程碑核验本轮必需检查，列明尚未实施的范围及留待最终检查的项目，不把计划写成已通过；整项任务最终交接满足共用约定的固定修订、依赖/产物、获取解析证据和兼容要求。未提交阶段使用冻结摘要审阅，最终 commit 形成后再核验内容及可消费输入，不要求为评审提前提交或发布。
 
 ## 4. 形成单任务评审入口
 
 使用 [review_template.md](assets/review_template.md)，默认 `reviews/<TASK_ID>.md`，链接 `validation/<TASK_ID>.md`。已有入口沿用，不为模板变化迁移历史。当前入口显示最新结论，历史按产物管理链接相应 attempt，注明覆盖和固定修订，不将过期结论留作当前状态。
+
+同任务各里程碑沿用上述当前入口，明确本轮名称及中间/最终范围，前轮通过依据保留在所属批准及历史证据入口并引用。中间里程碑通过只支持协调者放行下一里程碑；最终评审核对全部有效通过依据、整项任务累计 diff、最终必需检查及交接，不能用最后一轮的局部通过替代完整任务验收。
 
 评审材料写清问题、外部可见变化、设计符合度、最终差异、验证、兼容、当前限制与下游获取方式。缺少完整不可变修订时注明尚未提交，提供冻结摘要；提交后核验 commit blob 与批准的内容一致再关联证据。
 
@@ -53,15 +59,15 @@ description: Review task diffs against confirmed designs and bind validation to 
 
 评审说明首先让用户理解本次执行的代码变化。正文按以下顺序组织，尽量在首屏给出可审阅概览：
 
-1. 本次任务或修复名称、所属仓库及一句话目标。
+1. 本次任务及适用的里程碑或修复名称、所属仓库及一句话目标。
 2. **本次改动 / 解决的问题 / 主要代码**三列表。按行为归纳，每行说明做了什么、什么触发场景得到改善，并链接主要文件、注明关键函数；不逐文件罗列全部 diff。
 3. 必要时用一个具体的改动前后例子说明行为。表格覆盖整个待 Review 的范围；同一范围多次修复后，仍围绕最终实现整理概览，不能只讲最后一次修复或用内部问题代号替代问题描述。
 4. 简短说明验证结果，以及影响本次评审决定的未解决问题、兼容变化或限制。必需检查失败、需例外的范围和实质风险必须明确展示，不能放到附录后让用户自行发现。
-5. 提供本任务相对任务基线或修复相对原交付修订的 Review diff、主要代码与验证详情入口；面向用户展示或链接的 diff 可以省略 UT（单元测试）文件，省略时注明“未包含单元测试文件”。涉及累计影响时，再突出整项任务累计 diff。
+5. 提供按第 1 节确定基准的里程碑增量、完整任务相对任务基线或修复相对原交付修订的 Review diff、主要代码与验证详情入口；面向用户展示或链接的 diff 可以省略 UT（单元测试）文件，省略时注明“未包含单元测试文件”。里程碑评审同时提供整项任务累计 diff，完整任务评审突出累计范围。
 
 省略 UT 仅用于用户阅读展示。完整增量和累计 diff 的冻结证据仍包含单元测试，Reviewer 仍审查测试变化；评审正文保留测试改动摘要、实际验证结果及失败或限制。只过滤实际单元测试文件，不扩大到业务源码、共享代码或其他测试类型；用户要求查看单测时提供对应或完整 diff。
 
-冻结哈希、Agent/owner 标识、读取清单、执行时序、沙箱配置、资源处理、批准记录、历史尝试及详细独立复核过程放在验证入口或正文后的评审与交接记录中，保留可追溯性；首屏不重复铺陈这些维护信息。当前结论、Review 范围和会影响用户决定的遗留事项仍需简明可见。源码链接使用可阅读的文件链接和函数名称，不使用 IDE 行号片段或 HTML 锚点。
+冻结哈希、Agent/owner 标识、执行条件、资源处理、批准依据及必要历史按所属验证、授权或证据入口集中记录；评审正文及交接记录仅放决定所需摘要和引用，不另建读取清单或复制完整明细表。材料准入和盘点统一按 [产物管理](../delivery-flow/references/artifact-management.md) 执行。当前结论、Review 范围和会影响用户决定的遗留事项仍需简明可见。源码链接使用可阅读的文件链接和函数名称，不使用 IDE 行号片段或 HTML 锚点。
 
 交审前，协调者检查：用户仅阅读正文概览就能回答“改了什么、解决什么问题、去哪里看代码”；表格与本次完整 diff 一致，重要失败和限制没有遗漏。达不到时先改写说明，再请求 Review，不能只发送评审路径、哈希和通过请求。此约定也适用于会话中的交审消息；mainAgent 的具体展示流程通过 delivery-flow 引用本节。
 

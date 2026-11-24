@@ -7,12 +7,10 @@ description: Coordinate analysis, design review, worktrees, and multi-agent deli
 
 由通用 mainAgent 承担协调职责，维护整体交付记录，按依赖组织执行者并核验交付证据。CLI 管理任务持久状态，Agent 的启动与运行由宿主提供。
 
-用户只要求修改本工具包的 Skills、AGENTS 或模板时，仅处理指定规则，不为这次编辑启动业务需求交付流程。
-
 ## 1. 确认本次请求与执行边界
 
-- 读取当前工作区与涉及仓库的 `AGENTS.md`；修改本工具包前读取 `README.md`。
-- 定位本 Skill 所属项目的绝对路径 `POC_DIR`，确认 `cmd/coordctl`、`templates/` 和五个阶段 Skill 存在。Skill 是要实际读取的指令文件；缺失时先定向查找，仍找不到则记录受影响阻塞。
+- 遵守宿主及实际读写位置的适用指令，核对目标仓库的 `AGENTS.md`（如有）。本文件是需求交付入口。
+- 定位本 Skill 所属项目的绝对路径 `KIT_DIR`，确认 `cmd/coordctl`、`templates/` 和五个阶段 Skill 存在。Skill 是要实际读取的指令文件；缺失时先定向查找，仍找不到则记录受影响阻塞。
 - 按第 2 节核验本次交付入口，再恢复当前阶段与有效确认。参考输入的收录和读取按 [来源材料管理](references/source-materials.md)；来源存档不推进阶段。
 - 按阶段读取 [requirement-analysis](../requirement-analysis/SKILL.md)、[technical-design](../technical-design/SKILL.md)、[repository-preparation](../repository-preparation/SKILL.md)、[delivery-review](../delivery-review/SKILL.md) 和 [integration-validation](../integration-validation/SKILL.md)。
 - 按 [Agent 委派约定](references/agent-delegation.md) 选择执行者并提供完整输入。mainAgent 直接准备仓库，编码默认委派通用 subAgent 执行 [单仓任务执行](references/task-execution.md)；无子 Agent 能力时按同一入口串行执行。
@@ -29,7 +27,7 @@ description: Coordinate analysis, design review, worktrees, and multi-agent deli
 
 定义：
 
-- `WORKSPACES_ROOT`：默认 `$POC_DIR/workspaces`；用户指定其他根目录时沿用。
+- `WORKSPACES_ROOT`：默认 `$KIT_DIR/workspaces`；用户指定其他根目录时沿用。
 - `DELIVERY_DIR`：默认 `$WORKSPACES_ROOT/<需求名>`；用户直接指定需求目录时使用该目录，不重复追加需求名。
 - `CONTROL_DIR`：`$DELIVERY_DIR/control`，只在方案确认后创建。
 
@@ -51,88 +49,24 @@ description: Coordinate analysis, design review, worktrees, and multi-agent deli
 
 “开发这个需求，之前有需求信息和预调研方案”表示开发意图及参考输入，不等于确认了当前需求和方案。既有批准仅在同一交付、同一版本和实际范围内恢复；用户明确采用并确认旧整稿时，不再重复询问同一批准。整理、重写或补全后发生内容变化，按所属阶段 Skill 记录受影响的确认。
 
-写入前检查父目录和目标位置，冲突目录不得覆盖。确认为新建后，从 [delivery.template.json](assets/delivery.template.json) 初始化 `delivery.json`，填写真实名称、绝对路径、已明确的分支、时间和授权依据，初始 `status` 为 `init`。新需求的文档版本按各模板起步，不沿用参考资料的版本号；尚未明确但不影响需求分析的执行配置留到相应阶段核查。
+写入前检查父目录和目标位置，冲突目录不得覆盖。初始化或恢复整体记录前，读取 [整体交付记录](references/delivery-records.md)。确认为新建后，从 [delivery.template.json](assets/delivery.template.json) 初始化 `delivery.json`，填写真实名称、绝对路径、已明确的分支、时间和授权依据，初始 `status` 为 `init`。新需求的文档版本按各模板起步，不沿用参考资料的版本号；尚未明确但不影响需求分析的执行配置留到相应阶段核查。
 
-`delivery.json` 是本 Skill 管理的整体状态文件，从初始化开始维护。`requirement-analysis` 的人工评审产物为 `requirement.md`，来源收录按分工执行，版本、澄清和确认都在文档内；由协调者同步整体状态。技术设计阶段再生成 `design.md`，方案确认后才生成执行控制材料。下图是完整交付阶段的可能目录，除初始化状态外的材料按阶段生成：
-
-```text
-workspaces/<需求名>/
-├── delivery.json          # 初始化时创建，保存整体阶段与恢复信息
-├── requirement.md         # 人工评审入口
-├── design.md              # 人工评审入口
-├── sources/               # 来源索引与确有必要的原文/导出，按来源材料管理创建
-├── repos/<仓库别名>/       # 方案确认后建立的 Git worktree
-├── control/               # worktree 准备完成后生成
-│   ├── requirement.md     # 已确认完整快照，包含版本与确认依据
-│   ├── design.md
-│   ├── execution.md
-│   ├── project.json       # version 1 任务状态与证据
-│   ├── decisions.jsonl    # 首次 decide 时由 CLI 创建
-│   ├── baselines/         # 历次确认版本的不可覆盖快照
-│   └── bin/coordctl       # 本需求独立二进制
-├── reviews/<scope>.md      # 当前评审入口
-├── validation/            # 当前验证入口
-│   ├── attempts/<scope>/<attempt>/ # 必要历史证据
-│   └── artifacts/         # 按需固定可消费产物
-├── .runtime/<scope>/<attempt>/    # 可重建运行资源，使用后核验处理
-└── delivery-report.md     # 最终交付说明
-```
-
-相关文档、日志和报告集中在需求目录。来源登记、必要正文/附件保留及版本引用按 [来源材料管理](references/source-materials.md)；稳定可取的外部原文可保留原位置并引用。不复制凭证、无关数据或整个私人会话。
-
-图示为新执行的默认布局，目录按需创建。已有需求沿用其入口和证据位置；一次性脚本、中间载荷和下载缓存不堆放根目录，非标准材料按产物管理约定说明用途。
+材料布局见整体交付记录，按阶段和实际需要创建；`requirement.md` / `design.md` 保持人工评审入口，执行快照和任务图在仓库全部就绪后生成。恢复沿用原位置，来源、证据与临时资源分别按第 1 节引用的共用约定处理。
 
 ## 3. 管理状态与确认依据
 
-从初始化开始，整体阶段写入 `delivery.json`。文档状态及确认记录遵循需求分析/技术设计 Skill 和各自模板，协调者同步真实确认版本、范围与依据。恢复旧文档时沿用已有真实记录，不因模板更新重建状态。
+状态转移、批准登记及记录恢复前，按 [整体交付记录](references/delivery-records.md) 核对进入条件、文档状态映射、当前与已确认版本、字段和写入方式。整体阶段与真实确认由 mainAgent 唯一维护，`project.json` 保持 version 1，任务状态只通过 CLI 修改。
 
-整体状态只由协调者维护，`requirement-analysis` 和 `technical-design` 不创建或修改 `delivery.json`。不能将整体状态混入 `project.json`；后者保持 version 1，任务状态仍为 `pending / claimed / completed / skipped`。
+`delivery.json` 写入仍须使用文件系统锁、同目录临时文件刷新后原子替换并保留未知字段；交接协调权先确认旧 writer 停止。只记录真实确认和阶段转移，局部答复、Agent 返回或文件存在不等于整稿获批，参考资料不自动成为当前批准。
 
-| 整体状态 | 进入条件及下一步 |
-|---|---|
-| `init` | 名称、目录及已明确的执行配置已记录，初始化状态已保存 |
-| `analyzing_requirement` | 开始执行需求分析 Skill |
-| `awaiting_requirement_review` | 可审阅需求稿已完成，等待用户确认具体版本 |
-| `requirement_confirmed` | 需求关键问题已解决，存在对应版本的真实确认 |
-| `designing` | 基于确认需求执行技术设计 Skill |
-| `awaiting_design_review` | 技术评审稿已完成，等待用户 Review |
-| `design_confirmed` | 技术评审问题已解决，方案版本得到真实确认 |
-| `preparing_repos` | 开始核对开发基线并准备各仓库 worktree |
-| `repos_ready` | 所有改动仓库的来源、路径、分支、基线及写入占用核验通过；执行环境缺口已单独记录 |
-| `preparing_control` | 开始生成快照、执行说明及 version 1 任务图 |
-| `control_ready` | 文档和任务图一致、CLI 检查通过、可分发任务 |
-| `developing` | 仓库 Agent 按依赖认领、开发、评审和验证 |
-| `verifying` | 所有任务已结束，进行跨仓库整体验收与证据复核 |
-| `completed` | 全部完成条件满足，最终报告已落盘 |
-| `blocked` | 环境、权限、提交授权或执行故障阻止继续推进 |
-
-正常按表顺序推进，需求/方案评审等待使用对应 awaiting 状态，不冒充已确认或执行失败。开发阶段的单任务 Review 或提交等待保留 `claimed`，在该任务的评审入口和 `delivery.json` 中记录，不新增 CLI 任务状态或退回文档评审阶段。
-
-局部阻塞写入 `blockers`，其他工作继续：准备阶段有仓库可推进时保持 `preparing_repos`，开发阶段有执行者或 ready 任务可推进时保持 `developing`，验收/推送阶段仍有可执行项时保持 `verifying`。所有当前阶段可推进工作均受阻时才进入 `blocked`，保存 `resume_status`、影响范围和解除条件；需求/方案的正常整稿评审等待仍使用 awaiting 状态。恢复只记录真实接入和后续转移，不补造早期历史。
-
-每次转移同时保存 `updated_at` 和 `history` 条目，包含前后状态、时间、原因与证据路径。确认记录必须包含文档版本、Reviewer、时间和实际确认依据；草稿生成、局部问题回答、任务完成均不能替代整份文档确认。
-
-模板中的 `null` 表示尚未确认或尚未生成，不能当成已授权。时间采用带时区的 ISO 8601 格式，记录结构保持一致：
-
-- `history[]`：`from`、`to`、`at`、`reason`、`evidence`；初始记录的 `from` 为 null。
-- `approvals[]`：稳定 `id`、`stage`、`version`、`reviewer`、`at`、`evidence`，决策确认另含 `decision_id`。任务 Review/提交确认另注明 `task_ids`，修复确认含 `correction_id`，在证据中记录审阅的 commit 或工作树摘要；批准一项任务不扩展到其他任务。旧记录无 ID 时兼容恢复，不重复追加同一批准。
-- `authorization` 的非空项：`scope`、`at`、`evidence`；只记录明确授权的动作和范围。
-- `sources[]`：协调者登记本次有效输入。新记录用来源 `id` 和来源索引入口关联，正文、版本、读取范围及副本信息集中在 `sources/index.md`；已有 url/path 等记录兼容保留。具体收录规则见来源材料管理，不把来源字段当作批准或阶段状态。
-- `blockers[]`：`id`、`reason`、`task_ids`、`unblock_condition`、`resolved_at`。
-- `agents[]`：`session_id`、`owner`、`task_ids`、`repo`；没有真实会话时不填造假的 ID。
-- `repositories[]`：保存逐仓来源、准备结果和当前交付修订；`delivery_commit`、证据指针及 `corrections[]` 的字段与恢复规则统一见 [恢复约定](references/recovery-and-corrections.md)。
-- `pushes[]`：逐仓普通推送及远端核验记录，包含稳定 `id`、`repo`、`remote`、`ref`、固定 `commit`、实际 `remote_commit`、`result`、`verified_at`、`evidence`；失败或未核验字段如实保留，远端地址与证据不包含凭证。缺少该可选字段的旧实例仍可恢复。
-
-协调者独占写入 `delivery.json`，使用文件系统锁、同目录临时文件完整写入和刷新后原子替换，保留未知字段；这些是协调者的写入要求，CLI 不负责该文件。交接协调权前确认旧协调者停止写入，不能只依赖记录中的名字推断互斥。批准、修复和重试去重按恢复约定，history 只记录真实阶段转移。
-
-恢复时先通过第 2 节的交付身份核验，再检查记录、文件、worktree、CLI 状态及证据是否一致，修复中断处再继续。只有已核实属于本次交付的需求或方案而没有 `delivery.json` 时，才沿用原入口兼容接入，由协调者初始化状态并据真实记录恢复到首个未获确认的阶段。参考文档不适用这条恢复路径。基线变更可以显式退回需求或方案阶段，保留历史及受影响确认记录，不静默回退或跳过门禁。
+需求和方案评审等待使用对应 awaiting 状态；任务 Review 等待保持 `claimed` 和原 owner。局部阻塞不停止独立工作，当前阶段所有工作受阻时才进入 `blocked` 并保存续接条件。恢复核验当前文档、Git、CLI 与证据，保留成功副作用和有效授权；基线变化显式同步受影响确认和历史，不静默回退或重建旧交付。
 
 ## 4. 需求分析与技术评审
 
 1. 新需求先进入 `analyzing_requirement`，按来源材料管理登记相关输入并收录必要原文，再按委派约定提供来源身份、实际读取范围、名称、当前文档位置及本次已有结论，由 mainAgent 或需求设计 subAgent 执行 `requirement-analysis`。材料无法读取时登记缺口，继续可独立整理的部分。
 2. 核验返回的 `requirement.md` 及真实状态。mainAgent 组织需要的澄清和整稿 Review，反馈由文档 writer 按需求 Skill 写回；稿件就绪进入 `awaiting_requirement_review`，实际整稿确认后同步 `delivery.json` 并进入 `requirement_confirmed`。
 3. 进入 `designing`，提供确认需求及仓库只读入口，由 mainAgent 或需求设计 subAgent 执行 `technical-design`。该 Skill 负责模板、仓库核查、模块契约与验证计划，不提前创建 worktree 或控制目录。
-4. 核验返回的 `design.md` 和未决事项，并按 [technical-design 的文档组织约定](../technical-design/SKILL.md#3-按标准模板形成一份技术方案) 检查评审入口与维护信息的位置，进入 `awaiting_design_review`，mainAgent 展示具体版本并组织反馈；按所属 Skill 同步受影响文档。整稿确认后同步 `delivery.json` 并进入 `design_confirmed`，继续授权范围内的准备。
+4. 核验返回的 `design.md` 和未决事项，并按 [技术方案写作与交付检查](../technical-design/references/document-writing.md) 检查评审入口、必要核查和真实状态；“整理中”或“修订中”的稿件继续在 `designing` 完成，交审或交确认后才进入 `awaiting_design_review`。mainAgent 展示具体版本并组织反馈，按所属 Skill 同步受影响文档。整稿确认后同步 `delivery.json` 并进入 `design_confirmed`，继续授权范围内的准备。
 
 需求和方案服务人工评审，Agent 命令和执行任务放入后续控制目录。会话已有确认时保留授权直接推进，不能要求用户重复确认。
 
@@ -151,15 +85,15 @@ mainAgent 直接执行 [repository-preparation](../repository-preparation/SKILL.
 进入 `preparing_control`，创建 `CONTROL_DIR`：
 
 1. 将已确认需求和方案复制为完整快照，并在 `baselines/` 保存不可覆盖基线，记录版本、确认依据及内容摘要。复制去重按产物管理，当前快照与评审入口保持一致；快照内相对引用的原解析位置按来源材料管理记录，不能因复制而假设链接仍可导航。
-2. 根据确认方案生成 `execution.md`，写清绝对路径、确认版本、需求验收/模块/验证用例与任务的对应关系、依赖原因、仓库边界、验证命令和交接要求。使用实际名称或已有编号，不要求人工评审稿先提供编号映射表。
+2. 根据确认方案生成 `execution.md`，写清绝对路径、确认版本、需求验收/模块/验证用例与任务的对应关系、依赖原因、仓库边界、验证命令和交接要求。按 [单仓任务执行](references/task-execution.md) 为各任务划分初始里程碑，确定目标、验收边界及检查时点。使用实际名称或已有编号，不要求人工评审稿先提供编号映射表。
 3. 从 `templates/project.template.json` 生成 `project.json`，保留 `version: 1`。根据实际方案生成任务，不复制 README 的示例任务图。
 4. 每项任务填写唯一 `id`、唯一授权 worktree 的绝对路径 `repo`、`title`、`objective`、`acceptance`、`handoff_requirements`、`depends_on` 和初始 `status: pending`。一个仓库只有一个任务时，`id` 直接使用仓库别名，`title` 以仓库名开头；同一仓库确有多个任务时，使用 `<仓库别名>-<范围>`，并在标题中保留仓库名。不要只用 `contract`、`core`、`forwarding` 等抽象能力名隐藏任务对应的仓库。不添加整体阶段、审批或 Agent 调度字段。
 5. 检查任务 ID 唯一、引用存在、无自依赖或环、仓库授权正确，且方案范围被完整覆盖。同一 worktree 的多个写任务用依赖或协调调度串行化。
 6. 验收须包括符合设计、必要代码 Review、仓库要求的检查与相关测试；交接须包括接口/数据契约、不可变修订、可消费的固定依赖/产物及解析验证、兼容及下游使用方式，按 [验证与证据约定](references/validation-and-evidence.md)。
-7. 在 `POC_DIR` 为本需求构建独立 CLI，不覆盖活跃二进制：
+7. 在 `KIT_DIR` 为本需求构建独立 CLI，不覆盖活跃二进制。使用 Go 默认缓存或本会话明确配置的 `GOCACHE`，沿用已有资源记录，并将实际缓存位置和配置提供给后续执行者：
 
 ```bash
-GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CONTROL_DIR/bin/coordctl" ./cmd/coordctl
+go build -o "$CONTROL_DIR/bin/coordctl" ./cmd/coordctl
 ```
 
 设置 `COORD="$CONTROL_DIR/bin/coordctl"`、`PROJECT="$CONTROL_DIR/project.json"`。运行 `summary`，逐任务运行 `context`，核对输出和预期任务图一致。CLI 不负责校验所有图结构、文档确认、Git 修订真实性或证据质量，以上检查由协调者完成。
@@ -176,23 +110,23 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CONTROL_DIR/bin/co
 
 进入 `developing`。按 [委派约定](references/agent-delegation.md) 提供完整输入和唯一 owner，指定读取 [单仓任务执行](references/task-execution.md)。在 `delivery.json.agents` 记录实际会话与 owner 的对应关系，不伪造宿主会话 ID。
 
-以单任务为单位推进开发、人工 Review、提交与依赖解锁。独立任务可以并行启动；任一任务达到可审阅条件后立即处理该任务，不等待同批其他任务全部结束，也不将多个仓库的提交确认捆绑为默认门槛。用户对本批任务另有明确评审或授权安排时沿用其安排。
+以单任务为单位推进交付，任务内按 [单仓任务执行](references/task-execution.md) 逐里程碑开发、Review 和续接。委派前提供初始划分及本轮里程碑，执行者只读核查后提出细化建议，由 mainAgent 核定并写回执行入口；不增加独立的里程碑方案审批。独立任务可以并行启动；任一里程碑达到可审阅条件后立即处理，不等待同批其他任务全部结束，也不将多个仓库的提交确认捆绑为默认门槛。用户对本批任务另有明确评审或授权安排时沿用其安排。
 
 执行者不可用时按委派约定选择已有通用执行者；没有子 Agent 能力时，mainAgent 按依赖串行处理。用户已安排独立 IDE / CLI 会话时可提供相同任务输入，不将配置 Agent 或启动额外会话作为串行交付的前置。缺少角色不构成调度阻塞；实际缺失的执行能力或验收条件仍按影响范围记录。
 
 编码者按单仓任务执行入口读取 context、认领/恢复、实现、验证和返回材料。mainAgent 核验其真实执行状态，不因 Agent 已返回就当作任务完成，也不在同一 worktree 并行派发 writer。
 
-每个任务在 `complete` 前按以下步骤推进：
+每个里程碑就绪后按下列第 1–3 步完成审查、用户 Review 和真实确认；通过后由 mainAgent 放行下一里程碑，尚未通过时只处理本轮修复和补验。已有明确覆盖本轮的评审与授权安排直接沿用。里程碑通过不等于提交授权，也不执行 `complete` 或解锁下游；全部里程碑通过并满足整项任务最终门禁后，才执行第 4–5 步。
 
-1. mainAgent 执行或委派 [delivery-review](../delivery-review/SKILL.md)，提供任务、实际 diff、确认版本、有效决策和验证材料。编码者按反馈修复，Reviewer 复核并返回该 Skill 规定的单任务证据；核查自检与独立审查的真实边界，并按产物管理核验当前入口、历史、可读取证据和资源处理。
-2. 材料就绪就按 [delivery-review](../delivery-review/SKILL.md) 第 4 节的用户阅读顺序交审：先展示本任务的改动、解决的问题和主要代码，再简述验证及影响评审决定的限制，附本次范围的 Review diff 与评审入口；不要只发送路径、哈希或通过请求。缺少覆盖范围的授权时请求 Review/提交确认，不等待独立任务。沿用已明确覆盖的授权，流程安排、方案确认或另一任务批准不能替代本任务授权。
+1. mainAgent 执行或委派 [delivery-review](../delivery-review/SKILL.md)，提供任务及本轮里程碑范围、审阅基准、实际增量与累计 diff、确认版本、有效决策和验证材料，注明是中间里程碑还是整项任务最终评审。编码者按反馈修复，Reviewer 复核并返回该 Skill 规定的证据；核查自检与独立审查的真实边界，并按产物管理核验当前入口、历史、可读取证据和资源处理。
+2. 材料就绪就按 [delivery-review](../delivery-review/SKILL.md) 第 4 节的用户阅读顺序交审：先展示本轮改动、解决的问题和主要代码，再简述验证及影响评审决定的限制，附本次范围的 Review diff 与评审入口；不要只发送路径、哈希或通过请求。缺少本轮真实确认时请求 Review，需要提交且缺少覆盖范围的授权时再请求提交确认，不等待独立任务。沿用已明确覆盖的评审与授权安排，流程安排、方案确认或另一任务批准不能替代本轮所需依据。
 3. 将真实批准按稳定 ID、实际范围、冻结摘要及依据记录到 Review 和 `delivery.json`。检查失败默认阻塞该项验收，仅有真实批准的具体验收例外时按范围交接，原失败及补验条件保留。
-4. mainAgent 确认验收和有效授权满足后，当前 writer 按单仓任务执行约定创建新增提交、核验冻结内容并执行 `complete`，返回真实修订和 CLI 结果。
+4. mainAgent 核对全部里程碑的有效通过依据、整项任务累计 diff、最终检查与可消费交接，确认验收和有效授权满足后，当前 writer 按单仓任务执行约定创建新增提交、核验冻结内容并执行 `complete`，返回真实修订和 CLI 结果；已有获授权的里程碑提交时保留并核验，不重复提交。
 5. mainAgent 核对实际 Git/CLI 与最终 Review、验证及可消费 handoff 一致，核对新增材料及遗留资源，再更新当前 `delivery_commit` 和证据入口。中途失败按恢复约定补齐缺失步骤，不重放已成功动作；实际 complete 已成功时不因补证据问题重复 complete。
 
-每次收到单任务完成报告或用户 Review 反馈，先处理该任务的可执行后续步骤。向用户请求 Review 只暂停该任务的提交及依赖，不停止其他独立 Agent，也不等待它们结束；继续推进其他已授权的 ready 任务。
+每次收到里程碑、单任务完成报告或用户 Review 反馈，先处理该任务的可执行后续步骤。向用户请求 Review 时暂停该任务的下一里程碑及未获授权的提交，其依赖仍不解锁；不停止其他独立 Agent，也不等待它们结束，继续推进其他已授权的 ready 任务。
 
-有任务可 Review 且需要用户反馈或提交授权时，mainAgent 核验并展示该任务的具体材料，保存当前交付状态、证据入口、持久 owner、待确认范围和续接信息，然后结束本轮回复以释放交互。不得为了等待其他任务而等待整批完成，也不持续阻塞在等待调用或轮询中。任务保持 `claimed`，仍有独立工作可推进时整体保持 `developing`；释放交互不代表停止其他执行者或结束交付。收到授权或实际完成通知后，先核对持久状态、最终差异和原 writer，再推进对应任务；已有覆盖范围的授权则直接继续，不为释放交互重复请求批准。其他任务能否在本轮回复结束后独立运行，以宿主实际能力为准，不假定支持。
+有任务或里程碑可 Review 且需要用户反馈或提交授权时，mainAgent 核验并展示该范围的具体材料，保存当前交付状态、证据入口、持久 owner、待确认范围和下一里程碑的续接信息，然后结束本轮回复以释放交互。不得为了等待其他任务而等待整批完成，也不持续阻塞在等待调用或轮询中。任务保持 `claimed`，仍有独立工作可推进时整体保持 `developing`；释放交互不代表停止其他执行者或结束交付。收到授权或实际完成通知后，先核对持久状态、最终差异和原 writer，再推进对应任务；已有覆盖范围的授权则直接继续，不为释放交互重复请求批准。其他任务能否在本轮回复结束后独立运行，以宿主实际能力为准，不假定支持。
 
 单任务提交且 `complete` 成功后，立即重新读取 `summary`，为所有依赖均已满足的 ready 任务分派 Agent。下游重新读取 `context`，并核对当前交付指针、corrections 与有效批准决策，按确切修订集成。CLI context 的历史 handoff 不自动包含后续修复。Git commit 本身不解锁依赖，必须提交真实验证和 handoff 并成功 `complete`。不在共享 worktree 并行派发写入者。
 
@@ -231,7 +165,7 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CONTROL_DIR/bin/co
 
 协调者核对 summary 无 pending/claimed、非空任务图覆盖范围、原完成与当前修订的证据均真实、交付代码未遗漏、必需合同及环境验收成立、需审批决策有实际确认。已批准的检查例外保留其阶段范围和待补事项，不自动替代必需整体验收。证据不足不能由测试名称或工具成功返回补成通过。
 
-本工具包自身的修改遵循 [AGENTS.md 的验证要求](../../AGENTS.md#验证要求)，业务仓库仍执行其适用检查；不将活跃控制文件作为测试夹具。
+各业务仓库执行其适用检查和已确认验收；不将活跃控制文件作为测试夹具。
 
 生成 `delivery-report.md`，记录解决的问题、需求与方案版本、各仓库路径/分支/提交、外部可见变化、Review、测试及整体验收结果、兼容影响、必要迁移/回退、已确认偏离、明确延期范围和后续发布事项。
 
@@ -239,21 +173,6 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CONTROL_DIR/bin/co
 
 ### 整体验收通过后的推送
 
-整体验收通过并有对应范围的明确推送授权后，由 mainAgent 推送全部交付仓库；只读参考仓库或无需产物的 skipped 任务不因此产生无关分支。已有条件式授权直接沿用，用户明确暂停或限定本地范围时按其最新要求执行。
+整体验收通过且有对应仓库、目标和范围的明确推送授权时，mainAgent 在执行或恢复推送前读取 [逐仓推送步骤](references/push-delivery.md)，普通推送固定 `delivery_commit` 并核验远端 SHA。沿用已有条件式授权，保留逐仓成功与失败，不 force push 或推导 PR、合并、部署授权。
 
-1. 从当前交付记录恢复逐仓 worktree、最新 `delivery_commit`、远端和目标分支，核对真实 Git 状态、完整 SHA、Review/授权与验收证据一致。需求分支 HEAD 必须等于当前已验收修订，工作树不能遗漏本次未提交改动；出现新提交或变化时先处理受影响评审/验证，不把浮动 HEAD 直接推送，也不自行补提交。
-2. 核实各仓库对应远端与完整 `refs/heads/<需求分支>`。优先使用用户已指定或已有记录的目标；未指定时核查源仓库 origin 是否为实际交付远端。worktree origin 指向本地 clone/mirror 时，追溯已确认源仓库的实际远端，不将推到本地路径当作远端交付。来源或目标有歧义时只暂停受影响仓库，不猜测、初始化新远端或修改 Git 配置。
-3. 检查实际远端分支 SHA；已等于目标修订时记录“已同步”并保留原成功结果。否则从该 worktree 普通推送固定提交，变量替换为已核实值：
-
-```bash
-git -C "$WORKTREE_PATH" push --porcelain "$PUSH_REMOTE" \
-  "$DELIVERY_COMMIT:refs/heads/$BRANCH"
-git -C "$WORKTREE_PATH" ls-remote --heads "$PUSH_REMOTE" "refs/heads/$BRANCH"
-```
-
-逐条检查退出码；远端查询返回的完整 SHA 必须等于被验收的 `DELIVERY_COMMIT`。非快进、权限、保护分支或网络失败保留实际结果，不 force push、跳过 hooks、改写历史或自行合并冲突。
-
-4. 将逐仓目标、固定修订、推送与核验结果保存到 `delivery.json.pushes` 和现有交付报告/验证入口；必要输出按产物管理归档，不默认另建独立当前推送清单。全部仓库结果逐项维护，允许独立推送继续；部分成功不是回滚理由。
-5. 中断或部分失败后先比对实际远端、Git 和已有记录，成功项不重复推送，只补未完成步骤。实际已经推送但记录失败时先核验远端，再补同一稳定事件。尚有可推进项保留 `verifying`，所有剩余项受阻时记录 `blocked`、`resume_status: verifying` 及解除条件，明确“验收已通过，推送未全部完成”。
-
-全部必需验收及本次要求的逐仓推送核验完成后，更新报告和 `delivery.json.status` 为 `completed`，附各仓库远端分支及固定修订。推送不等于 PR、合并或部署，这些动作及正式 worktree 清理继续遵循各自实际授权；明确仅本地交付的范围按其确认完成条件收尾。
+全部必需验收和本次要求的推送核验完成后，更新报告和整体状态为 `completed`。部分推送失败按真实可推进范围保留 `verifying` 或 `blocked`；明确仅本地交付时按其确认范围收尾。

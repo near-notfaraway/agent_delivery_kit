@@ -1,6 +1,6 @@
 # coordctl CLI
 
-`coordctl` 读取 version 1 的 `project.json`，管理任务认领、依赖、完成证据、上下文和设计偏离记录。构建与试运行见 [README](../README.md#快速开始)，实际交付准备见 [delivery-flow](../skills/delivery-flow/SKILL.md)。
+`coordctl` 读取 version 1 的 `project.json`，管理任务认领、依赖、完成证据、上下文和设计偏离记录。构建与试运行见 [README 的构建说明](../README.md#构建并试运行-cli)，实际交付准备见 [delivery-flow](../skills/delivery-flow/SKILL.md)。
 
 ## 使用已有控制目录
 
@@ -12,7 +12,7 @@ COORD="$CONTROL_DIR/bin/coordctl"
 PROJECT="$CONTROL_DIR/project.json"
 ```
 
-`POC_DIR` 在流程中表示工具包的绝对路径。需求与方案、整体记录和控制材料的位置由交付流程定义；CLI 只读取命令指定的控制文件，不自动读取 Markdown 或 `delivery.json`。恢复已有需求时沿用其入口和二进制。
+`KIT_DIR` 在流程中表示工具包的绝对路径。需求与方案、整体记录和控制材料的位置由交付流程定义；CLI 只读取命令指定的控制文件，不自动读取 Markdown 或 `delivery.json`。恢复已有需求时沿用其入口和二进制。
 
 ## 命令
 

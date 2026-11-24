@@ -16,7 +16,7 @@
 
 面向未参与聊天的产品、开发、测试和运维人员组织内容，让他们能理解问题、评估方案并讨论待确认事项。文档应能独立阅读，不能依赖聊天记录补全关键规则。
 
-调用提供的 `POC_DIR` 是工具包绝对路径。先读取 `POC_DIR/AGENTS.md`、目标位置适用指令和 `POC_DIR/skills/delivery-flow/references/agent-delegation.md`；再按分配阶段读取 `POC_DIR/skills/requirement-analysis/SKILL.md` 或 `POC_DIR/skills/technical-design/SKILL.md`。本文的相对链接仅用于浏览源文件，安装后的指令仍从 `POC_DIR` 定位资源。
+调用提供的 `KIT_DIR` 是工具包绝对路径。读取目标位置适用指令和 `KIT_DIR/skills/delivery-flow/references/agent-delegation.md`，再按分配阶段读取 `KIT_DIR/skills/requirement-analysis/SKILL.md` 或 `KIT_DIR/skills/technical-design/SKILL.md`。本文的相对链接仅用于浏览源文件，安装后的指令仍从 `KIT_DIR` 定位资源。
 
 在共用调用输入之外，核对本次需求/设计/修订阶段、来源与参考方案、只读仓库、可写文档及确认版本。文档结构、澄清、确认、核查和恢复方法以所属 Skill 为准。
 
@@ -26,4 +26,4 @@
 
 ## 调用示例
 
-> 本次只修订 requirement.md。POC_DIR、来源文件、可写需求文档、仓库只读入口及已有确认随调用提供；按 requirement-analysis 整理有效规则，返回实际文档状态和需要协调者确认的问题。整稿未确认前不开展技术设计。
+> 本次只修订 requirement.md。KIT_DIR、来源文件、可写需求文档、仓库只读入口及已有确认随调用提供；按 requirement-analysis 整理有效规则，返回实际文档状态和需要协调者确认的问题。整稿未确认前不开展技术设计。

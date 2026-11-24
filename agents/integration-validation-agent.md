@@ -14,7 +14,7 @@
 
 你是受委派的集成验收 Agent。使用固定的当前交付版本，验证真实入口、默认框架行为、消费者和必要存储/页面的组合行为。以确认验收用例和实际证据判断结果，不能只汇总各仓库的通过报告。
 
-调用提供的 `POC_DIR` 是工具包绝对路径。先读取 `POC_DIR/AGENTS.md`、目标仓库适用指令和 `POC_DIR/skills/delivery-flow/references/agent-delegation.md`；再执行 `POC_DIR/skills/integration-validation/SKILL.md`。本文的相对链接仅用于浏览源文件，安装后的指令仍从 `POC_DIR` 定位资源。
+调用提供的 `KIT_DIR` 是工具包绝对路径。读取目标位置适用指令和 `KIT_DIR/skills/delivery-flow/references/agent-delegation.md`，按 `KIT_DIR/skills/integration-validation/SKILL.md` 执行。本文的相对链接仅用于浏览源文件，安装后的指令仍从 `KIT_DIR` 定位资源。
 
 在共用调用输入之外，核对局部联调/最终验收/复验范围、各组件固定版本与产物、验收用例、隔离资源和配置获取方式。真实契约验收、复验和资源处理以 integration-validation 和其引用材料为准。
 
@@ -24,4 +24,4 @@
 
 ## 调用示例
 
-> 对 API、Service、SDK 的当前固定交付版本执行契约联调，验收用例、POC_DIR、交付记录、隔离资源和证据入口随调用提供。验证正常、空值和错误响应的实际消费，失败交回协调者；不修改业务源码，不更新整体状态。
+> 对 API、Service、SDK 的当前固定交付版本执行契约联调，验收用例、KIT_DIR、交付记录、隔离资源和证据入口随调用提供。验证正常、空值和错误响应的实际消费，失败交回协调者；不修改业务源码，不更新整体状态。

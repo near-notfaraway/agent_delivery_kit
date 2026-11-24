@@ -4,20 +4,9 @@
 
 一个需求涉及多个仓库时，常常需要反复解释：每个 Agent 改什么、哪个任务可以开始、上游交付了哪个版本、上次评审停在哪里。Agent Delivery Kit 将这些信息保存在本地，让不同 IDE、CLI 或独立会话中的 Agent 按同一份需求和方案继续工作。
 
-工具包由 Markdown Skills、文档模板和 Go CLI `coordctl` 组成。协调 Agent 按 Skills 整理需求、推进评审并安排任务；`coordctl` 保存任务状态、检查依赖并提供上游交接上下文。
-
 ![交付流程：需求确认、方案确认、仓库准备、逐任务交付和集成验收。独立任务可并行，有依赖的任务等待上游完成。](docs/assets/delivery-flow.svg)
 
 需求和方案分别确认后，再准备仓库和执行控制材料。各任务按实际范围评审、验证和授权提交；全部任务结束后，进行集成验收并汇总交付结果。
-
-## 核心能力
-
-| 能力 | 解决的问题 |
-|---|---|
-| 需求、方案与逐项评审 | 用固定文档保留交付范围、确认依据和评审结果，减少反复传递上下文 |
-| 任务认领与依赖检查 | `claim` 拒绝依赖未满足的任务；文件锁保证同一任务的并发认领只有一个成功 |
-| 跨仓库交接 | `complete` 保存固定修订、验证结果和下游说明；`context` 返回任务边界及直接上游的交接证据 |
-| 跨会话续接 | 本地文件保留任务状态和设计偏离；新的会话核对记录后，可继续原任务 |
 
 ## 适用场景
 
@@ -27,7 +16,16 @@
 - 多个 IDE / CLI 会话分别处理不同任务，需要共享边界、进度和评审结果。
 - 工作中断或更换 Agent 后，需要从已有记录恢复，保留原任务的认领和交接事实。
 
-项目不绑定模型、IDE 或企业需求系统。Agent 由使用者所在的环境运行，用户参与需求、方案和代码评审，并按实际范围授权提交及发布。CLI 负责持久化任务事实；评审、验证和授权门禁由 Agent 按 Skills 落实。
+项目不绑定模型、IDE 或企业需求系统。Agent 由使用者所在的环境运行，用户参与需求、方案和代码评审，并按实际范围授权提交及发布。
+
+## 核心能力
+
+| 能力 | 解决的问题 |
+|---|---|
+| 需求、方案与逐项评审 | 用固定文档保留交付范围、确认依据和评审结果，减少反复传递上下文 |
+| 任务认领与依赖检查 | 依赖满足后才能开始下游任务，同一任务的并发认领只有一个成功 |
+| 跨仓库交接 | 保存上游的固定修订、验证结果和使用说明，让下游按确切版本继续 |
+| 跨会话续接 | 本地文件保留任务状态和设计偏离；新的会话核对记录后，可继续原任务 |
 
 ## 运行要求
 
@@ -39,34 +37,51 @@
 
 ## 快速开始
 
-### 1. 构建并试运行 CLI
+### 1. 安装入口 Skill
 
-克隆仓库后，在项目根目录执行：
+以下方式任选一种，只安装 [agent-delivery-kit 入口 Skill](skills/agent-delivery-kit/SKILL.md)。完整工具包在首次初始化时获取，也可以复用现有检出。
+
+#### 用 `npx skills` 安装
+
+推荐全局安装，安装后可在支持该安装位置的 Agent 中跨项目使用。需要 Node.js 22.20 或更新版本。
 
 ```bash
-CLI_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-delivery-kit-cli.XXXXXX")" &&
-GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CLI_DIR/coordctl" ./cmd/coordctl &&
-"$CLI_DIR/coordctl" summary --project templates/project.template.json
+npx skills add near-notfaraway/agent_delivery_kit --skill agent-delivery-kit -g
 ```
 
-空任务模板的输出为：
+#### 让 Agent 安装
 
-```json
-{
-  "counts": {},
-  "ready": []
-}
-```
+> 请从 `https://github.com/near-notfaraway/agent_delivery_kit` 全局安装 `agent-delivery-kit` Skill。
 
-这一步只检查 CLI 是否可运行。试运行二进制位于 `$CLI_DIR`，用完可删除该临时目录；正式交付使用需求独立的控制目录和二进制。命令、控制文件字段和退出码见 [CLI 文档](docs/cli.md)。
+#### 按 Agent 的方式手动安装
 
-### 2. 将需求交给协调 Agent
+在 Agent 的 Skill 管理界面导入 `skills/agent-delivery-kit/SKILL.md`，或按其文档将 `skills/agent-delivery-kit/` 复制到它识别的 Skill 目录。
 
-在能访问本工具包和业务仓库的 Agent 会话中，提供工具包绝对路径、原始需求和业务仓库路径。例如：
+### 2. 让 Skill 初始化
 
-> 用 Agent Delivery Kit 处理这个需求。工具包路径：`/absolute/path/to/agent_delivery_kit`。原始需求：……。涉及仓库：……。请先读取工具包的 `AGENTS.md` 和 `skills/delivery-flow/SKILL.md`，整理需求供我确认；确认需求后编写技术方案，方案确认后再准备仓库并开展开发。
+按你的 Agent 支持的方式选择 `agent-delivery-kit`，或在对话中直接点名：
 
-协调 Agent 读取 [delivery-flow](skills/delivery-flow/SKILL.md)，从需求整理开始推进。Skills 是指令文件，`coordctl` 不会自动执行它们或启动 Agent。
+> 用 `agent-delivery-kit` Skill 初始化。
+
+Skill 会在首次初始化时将完整工具包检出到 `~/.local/share/agent-delivery-kit`，再编译并试运行 `coordctl`。如果已有本地检出，可以在初始化时指定目录。默认使用通用 Agent；想配置需求设计、评审或验收 Agent 时，在同一轮告诉它。各阶段 Skills 由交付流程从工具包中按需读取。
+
+### 3. 启动或续接需求
+
+使用同一个入口，发出本次请求即可：
+
+> 用 `agent-delivery-kit` Skill 交付新需求。原始需求：……。涉及仓库：……。
+
+> 用 `agent-delivery-kit` Skill 继续处理需求，需求目录 `/absolute/path/to/requirement-directory`。这次继续：……。
+
+不支持安装 Skill 或临时试用时，可以让 Agent 直接读取 `/absolute/path/to/agent_delivery_kit/skills/agent-delivery-kit/SKILL.md`，再附上初始化、新需求或续接请求。
+
+### 4. 按阶段评审与确认
+
+1. 审阅 `requirement.md`，确认本次范围、业务规则和验收条件。
+2. 需求确认后审阅 `design.md`，确认实现方案；协调 Agent 随后在授权范围内准备仓库和执行材料。
+3. 开发中按任务和里程碑评审具体差异与验证结果，并按实际范围授权提交；全部任务结束后进行集成验收。推送、PR、合并和部署分别核对授权。
+
+## 交付材料
 
 材料默认保存在被 Git 忽略的 `workspaces/<需求名>/`，按阶段生成：
 
@@ -81,7 +96,35 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CLI_DIR/coordctl" 
 
 恢复已有需求时沿用原材料位置。真实需求材料和本地状态不应提交到工具包的公开仓库。
 
-## 任务与交接示例
+## 使用边界
+
+- 只支持共享本地文件系统上的协调，跨机器协作尚未验证。
+- 没有任务租约、心跳、超时回收和自动重试；中断后按 [恢复约定](skills/delivery-flow/references/recovery-and-corrections.md) 继续。
+- CLI 不会启动或托管 Agent，也不自动生成文档或落实人工评审、提交及发布授权。
+- `needs_approval` 只记录审批要求，尚未形成强制门禁；修订和证据字段的真实性仍需实际核验。
+- 认领只保证同一任务的并发所有权；多个任务修改同一 worktree 时，仍须由协调者安排唯一 writer。
+
+## 使用文档
+
+| 文档 | 用途 |
+|---|---|
+| [agent-delivery-kit](skills/agent-delivery-kit/SKILL.md) | 首次配置、新建或续接需求的用户入口 |
+| [delivery-flow](skills/delivery-flow/SKILL.md) | 完整交付、调度与跨会话恢复入口 |
+| [requirement-analysis](skills/requirement-analysis/SKILL.md) / [需求模板](skills/requirement-analysis/assets/requirement_template.md) | 需求整理与确认 |
+| [technical-design](skills/technical-design/SKILL.md) / [方案模板](skills/technical-design/assets/design_template.md) | 技术设计与方案评审 |
+| [repository-preparation](skills/repository-preparation/SKILL.md) | 基线核查与 worktree 准备 |
+| [delivery-review](skills/delivery-review/SKILL.md) / [integration-validation](skills/integration-validation/SKILL.md) | 单任务评审与跨仓库验收 |
+| [Agent 委派与可选角色配置](skills/delivery-flow/references/agent-delegation.md) | 执行者职责、调用输入与专业角色配置 |
+| [验证与证据](skills/delivery-flow/references/validation-and-evidence.md) / [产物管理](skills/delivery-flow/references/artifact-management.md) | 验证标准、替代路径与资源管理 |
+| [CLI 文档](docs/cli.md) | 命令、控制文件字段、输出和退出码 |
+
+## 工作原理
+
+工具包由 Markdown Skills、文档模板和 Go CLI `coordctl` 组成。协调 Agent 按 Skills 整理需求、推进评审并安排任务；`coordctl` 保存任务状态、检查依赖并提供上游交接上下文。
+
+CLI 负责持久化任务事实；评审、验证和授权门禁由 Agent 按 Skills 落实。[控制文件模板](templates/project.template.json)提供了 version 1 的空任务图，实际任务图按确认方案生成。
+
+### 任务与交接示例
 
 以虚构的 Item v1 契约为例：`api` 先发布稳定的 `id` 和 `name` 字段，`sdk` 再按该固定契约适配公开类型。SDK 任务依赖 API 任务。
 
@@ -137,35 +180,45 @@ GOCACHE=/private/tmp/agent-coordinator-go-cache go build -o "$CLI_DIR/coordctl" 
 
 `ready` 是根据任务状态和依赖计算出的可开始列表，任务此时仍为 `pending`。Git commit 本身不解锁依赖，必须成功执行 `complete`；活跃任务状态通过 CLI 修改，不能直接套用示例编辑控制文件。
 
-## 当前状态与限制
+## 开发与共创
 
-已在一个真实跨仓库需求中验证需求与方案确认、任务执行、逐项评审、交接和本地集成流程。现有自动化回归覆盖认领、依赖、完成证据、上下文、决策、跳过和状态汇总；独立 CLI 进程的状态恢复与并发认领尚未纳入自动化回归。
+### 构建并试运行 CLI
 
-- 只支持共享本地文件系统上的协调，跨机器协作尚未验证。
-- 没有任务租约、心跳、超时回收和自动重试；中断后按 [恢复约定](skills/delivery-flow/references/recovery-and-corrections.md) 继续。
-- CLI 不会启动或托管 Agent，也不自动生成文档或落实人工评审、提交及发布授权。
-- `needs_approval` 只记录审批要求，尚未形成强制门禁；修订和证据字段的真实性仍需实际核验。
-- 认领只保证同一任务的并发所有权；多个任务修改同一 worktree 时，仍须由协调者安排唯一 writer。
-- 完全不配置自定义 Agent、也不安装外部 Skills 的全新环境完整交付，以及新产物管理约定的落实效果，尚待验证。
+克隆仓库后，在项目根目录执行：
 
-后续重点是不同使用者和全新环境中的复用、更多真实交付验证，以及效率收益的量化评估。能力演进依据实际缺口和验证证据，当前范围保持为本地交付工具包。
+```bash
+CLI_DIR="$(mktemp -d "${TMPDIR:-/tmp}/agent-delivery-kit-cli.XXXXXX")" &&
+go build -o "$CLI_DIR/coordctl" ./cmd/coordctl &&
+"$CLI_DIR/coordctl" summary --project templates/project.template.json
+```
 
-## 文档导航
+空任务模板的输出为：
 
-| 文档 | 用途 |
+```json
+{
+  "counts": {},
+  "ready": []
+}
+```
+
+构建使用 Go 默认缓存；需要指定缓存位置时，在当前会话设置 `GOCACHE` 为可写的绝对路径。已有配置直接沿用，同一交付的后续构建使用相同配置，不要求创建固定名称或位置的缓存目录。
+
+这一步只检查 CLI 是否可运行。试运行二进制位于 `$CLI_DIR`，用完可删除该临时目录；正式交付使用需求独立的控制目录和二进制。命令、控制文件字段和退出码见 [CLI 文档](docs/cli.md)。
+
+### 项目进展
+
+当前已具备本地需求交付所需的流程、模板和 CLI，并完成真实跨仓库交付验证。
+
+| 范围 | 当前完成情况 |
 |---|---|
-| [CLI 文档](docs/cli.md) | 命令、控制文件字段、输出和退出码 |
-| [delivery-flow](skills/delivery-flow/SKILL.md) | 完整交付、调度与跨会话恢复入口 |
-| [requirement-analysis](skills/requirement-analysis/SKILL.md) / [需求模板](skills/requirement-analysis/assets/requirement_template.md) | 需求整理与确认 |
-| [technical-design](skills/technical-design/SKILL.md) / [方案模板](skills/technical-design/assets/design_template.md) | 技术设计与方案评审 |
-| [repository-preparation](skills/repository-preparation/SKILL.md) | 基线核查与 worktree 准备 |
-| [delivery-review](skills/delivery-review/SKILL.md) / [integration-validation](skills/integration-validation/SKILL.md) | 单任务评审与跨仓库验收 |
-| [Agent 委派与可选角色配置](skills/delivery-flow/references/agent-delegation.md) | 执行者职责、调用输入与专业角色配置 |
-| [验证与证据](skills/delivery-flow/references/validation-and-evidence.md) / [产物管理](skills/delivery-flow/references/artifact-management.md) | 验证标准、替代路径与资源管理 |
-| [控制文件模板](templates/project.template.json) | version 1 的空任务图 |
-| [AGENTS.md](AGENTS.md) | 仓库协作与开发约束 |
+| 需求交付流程 | 需求与方案确认、仓库准备、任务执行、逐项评审、跨仓库交接和本地集成验收已验证 |
+| 全新环境使用 | 不配置自定义 Agent、不安装外部 Skills，使用通用执行者完成交付已验证 |
+| 产物管理 | 材料准入、证据保留与复用、临时资源处理约定已在实际执行中验证 |
+| CLI 与自动化回归 | version 1 的认领、依赖、完成证据、上下文、决策、跳过和状态汇总已实现，已有测试覆盖这些核心行为及并发认领 |
 
-## 反馈与贡献
+后续重点是将 CLI 独立进程的状态恢复与并发认领检查纳入自动化回归，并根据不同使用者的实际交付继续完善流程、评估效率收益。能力演进依据实际缺口和验证证据，当前范围保持为本地交付工具包。
+
+### 反馈与贡献
 
 欢迎通过仓库 Issues 提交使用问题、缺陷和真实复用反馈，通过 Pull Request 提交改进。问题报告请包含工具链、复现步骤、预期与实际结果，并使用可公开的虚构任务数据。
 

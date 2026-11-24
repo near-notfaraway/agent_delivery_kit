@@ -18,7 +18,7 @@
 |---|---|
 | `repositories[]` | `delivery_commit` 完整 SHA；`delivery_review` / `delivery_validation` 为该修订的证据入口 |
 | `corrections[]` | 稳定 `id`、`task_id`、`repo`、`owner`、`original_task_commit`、`parent_commit`、`commit`、`review`、`validation`、`approval_id`、`affected_task_ids`、`at` |
-| `approvals[]` | 结构按 delivery-flow 第 3 节；修复确认通过 `correction_id` 关联，不生成第二套批准字段 |
+| `approvals[]` | 结构按 [整体交付记录](delivery-records.md) 的字段约定；修复确认通过 `correction_id` 关联，不生成第二套批准字段 |
 
 首次完成的指针不需要伪造 correction。修复记录可以先保存原因和范围，尚未形成的提交/批准字段保持 null；真实完成后补齐同一 `id`。`approval_id` 只引用实际存在且覆盖范围的确认，不能生成批准事实。
 
@@ -53,7 +53,7 @@
 
 ## 4. 写入与去重
 
-`delivery.json` 的唯一协调者和写入方式按 [delivery-flow 第 3 节](../SKILL.md#3-管理状态与确认依据)。恢复不改变该边界；子 Agent 返回结果，不并发维护整体状态。
+`delivery.json` 的唯一协调者和写入方式按 [整体交付记录](delivery-records.md)。恢复不改变该边界；子 Agent 返回结果，不并发维护整体状态。
 
 批准和 correction 在首次记录时采用稳定 ID，重复录入前按 ID 及实际证据查找；相同事件补齐原项，不重复追加。旧记录无 ID 时，按阶段、任务/决策/修复范围、真实批准依据匹配，不能仅按一句相同回复合并不同批准。发现相同 ID 指向不同事实先解决冲突。
 
